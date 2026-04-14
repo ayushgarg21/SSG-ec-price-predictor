@@ -5,6 +5,22 @@ End-to-end ML system for predicting Executive Condominium (EC) resale prices in 
 - **5 years** — Minimum Occupancy Period (MOP), when units become eligible for resale
 - **10 years** — Privatisation, when ECs become indistinguishable from private condominiums
 
+## Live Demo
+
+| Resource | URL |
+|----------|-----|
+| **Frontend (Streamlit)** | http://172.234.215.236:8501 |
+| **API (Swagger Docs)** | http://172.234.215.236:8000/docs |
+| **API Health Check** | http://172.234.215.236:8000/health |
+
+## Architecture
+
+![System Architecture](docs/architecture_diagram.png)
+
+## Data Model
+
+![Data Model](docs/data_model.png)
+
 ## Model Approach
 
 ### Problem Reframing
