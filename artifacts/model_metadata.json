@@ -1,0 +1,87 @@
+{
+  "algorithm": "XGBoost",
+  "model_type": "appreciation_ratio",
+  "target": "resale_psm / launch_psm",
+  "feature_columns": [
+    "district_num",
+    "area",
+    "floor_mid",
+    "lease_commence_year",
+    "years_from_launch",
+    "remaining_lease",
+    "segment_encoded",
+    "launch_psm",
+    "launch_vs_district",
+    "all_dist_med_psm",
+    "all_dist_vol",
+    "all_dist_std",
+    "ec_dist_med_psm",
+    "district_momentum",
+    "market_lag_psm",
+    "proj_lag_psm",
+    "proj_lag_vol",
+    "project_target_enc",
+    "area_quartile",
+    "is_post_mop",
+    "is_privatised",
+    "quarter",
+    "lease_age_bucket",
+    "is_high_floor"
+  ],
+  "metrics": {
+    "ratio_mae": 0.07833252149102972,
+    "ratio_r2": 0.433202847607674,
+    "price_mae": 92312.7674047828,
+    "price_rmse": 120972.64686942454,
+    "price_r2": 0.8802423839212861,
+    "price_mape": 5.410112327481661
+  },
+  "prediction_intervals": {
+    "coverage_pct": 68.30601092896174,
+    "avg_width": 252284.05028563322
+  },
+  "train_size": 9774,
+  "test_size": 366,
+  "all_model_results": {
+    "XGBoost": {
+      "ratio_mae": 0.07833252149102972,
+      "ratio_r2": 0.433202847607674,
+      "price_mae": 92312.7674047828,
+      "price_rmse": 120972.64686942454,
+      "price_r2": 0.8802423839212861,
+      "price_mape": 5.410112327481661
+    },
+    "LightGBM": {
+      "ratio_mae": 0.0788002637440141,
+      "ratio_r2": 0.42921893155475377,
+      "price_mae": 92906.93628036404,
+      "price_rmse": 126043.57679769096,
+      "price_r2": 0.8699919591298727,
+      "price_mape": 5.495163789069582
+    },
+    "CatBoost": {
+      "ratio_mae": 0.0829455470634133,
+      "ratio_r2": 0.32751289134626826,
+      "price_mae": 95542.28111475059,
+      "price_rmse": 122497.58245695128,
+      "price_r2": 0.8772041154938355,
+      "price_mape": 5.772377750864487
+    },
+    "Weighted Ensemble": {
+      "ratio_mae": 0.08220970155046974,
+      "ratio_r2": 0.348894065035802,
+      "price_mae": 94947.90391534245,
+      "price_rmse": 121261.43224889184,
+      "price_r2": 0.8796699317317408,
+      "price_mape": 5.7191454044453724
+    }
+  },
+  "leakage_audit": {
+    "launch_psm": "Computed from train-period data only",
+    "lag_features": "Computed from train-period data only",
+    "target_encoding": "KFold on train set, applied to val/test via train means",
+    "fill_medians": "Computed from train set only",
+    "area_bins": "Computed from train set only"
+  },
+  "run_id": "8588bd8d"
+}

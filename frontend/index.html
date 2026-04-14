@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EC Price Predictor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #1a1a2e; }
+        .container { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 1.8rem; margin-bottom: 8px; }
+        .subtitle { color: #6b7280; margin-bottom: 32px; font-size: 0.95rem; }
+        .card { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #374151; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s; }
+        input:focus, select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+        .results { display: none; }
+        .results.active { display: block; }
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+        .result-row:last-child { border-bottom: none; }
+        .result-label { font-size: 0.9rem; color: #6b7280; }
+        .result-value { font-size: 1.2rem; font-weight: 700; color: #1a1a2e; }
+        .result-value.positive { color: #059669; }
+        .result-value.negative { color: #dc2626; }
+        .error { color: #dc2626; font-size: 0.9rem; margin-top: 12px; display: none; }
+        .error.active { display: block; }
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 24px; }
+        .tab { padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: #e5e7eb; color: #374151; border: none; }
+        .tab.active { background: #2563eb; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EC Price Predictor</h1>
+        <p class="subtitle">Predict Executive Condominium resale prices at MOP (5yr) and privatisation (10yr)</p>
+
+        <div class="tab-bar">
+            <button class="tab active" onclick="switchTab('milestone')">Milestone Comparison</button>
+            <button class="tab" onclick="switchTab('custom')">Custom Prediction</button>
+        </div>
+
+        <div class="card">
+            <form id="predict-form">
+                <div class="form-grid">
+                    <div>
+                        <label for="district">Postal District</label>
+                        <select id="district">
+                            <option value="1">1 - Raffles Place, Marina</option>
+                            <option value="2">2 - Chinatown, Tanjong Pagar</option>
+                            <option value="3">3 - Alexandra, Queenstown</option>
+                            <option value="5">5 - Buona Vista, Clementi</option>
+                            <option value="10">10 - Tanglin, Holland</option>
+                            <option value="12">12 - Balestier, Toa Payoh</option>
+                            <option value="14">14 - Eunos, Geylang</option>
+                            <option value="16">16 - Bedok, Upper East Coast</option>
+                            <option value="17">17 - Changi, Loyang</option>
+                            <option value="18">18 - Pasir Ris, Tampines</option>
+                            <option value="19" selected>19 - Punggol, Sengkang</option>
+                            <option value="20">20 - Ang Mo Kio, Bishan</option>
+                            <option value="22">22 - Boon Lay, Jurong</option>
+                            <option value="23">23 - Bukit Batok, Bukit Panjang</option>
+                            <option value="25">25 - Woodlands, Admiralty</option>
+                            <option value="27">27 - Sembawang, Yishun</option>
+                            <option value="28">28 - Seletar, Yio Chu Kang</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="area">Floor Area (sqm)</label>
+                        <input type="number" id="area" value="95" min="30" max="300" step="1">
+                    </div>
+                    <div>
+                        <label for="floor">Floor Level</label>
+                        <input type="number" id="floor" value="8" min="1" max="50" step="1">
+                    </div>
+                    <div>
+                        <label for="lease_year">Lease Commencement Year</label>
+                        <input type="number" id="lease_year" value="2020" min="1995" max="2030" step="1">
+                    </div>
+                    <div>
+                        <label for="market_segment">Market Segment</label>
+                        <select id="market_segment">
+                            <option value="OCR" selected>OCR (Outside Central)</option>
+                            <option value="RCR">RCR (Rest of Central)</option>
+                            <option value="CCR">CCR (Core Central)</option>
+                        </select>
+                    </div>
+                    <div id="years-field" style="display: none;">
+                        <label for="years_from_launch">Years From Launch</label>
+                        <input type="number" id="years_from_launch" value="5" min="0" max="99" step="1">
+                    </div>
+                </div>
+                <button type="submit" class="btn" id="submit-btn">Predict Prices</button>
+            </form>
+            <p class="error" id="error-msg"></p>
+        </div>
+
+        <div class="card results" id="results">
+            <div id="milestone-results">
+                <div class="result-row">
+                    <span class="result-label">Price at MOP (5 years)</span>
+                    <span class="result-value" id="price-5yr">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Price at Privatisation (10 years)</span>
+                    <span class="result-value" id="price-10yr">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Appreciation</span>
+                    <span class="result-value" id="appreciation">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Appreciation %</span>
+                    <span class="result-value" id="appreciation-pct">—</span>
+                </div>
+            </div>
+            <div id="custom-results" style="display: none;">
+                <div class="result-row">
+                    <span class="result-label">Predicted Price</span>
+                    <span class="result-value" id="custom-price">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000'
+            : '';
+
+        let currentTab = 'milestone';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const yearsField = document.getElementById('years-field');
+            yearsField.style.display = tab === 'custom' ? 'block' : 'none';
+
+            document.getElementById('results').classList.remove('active');
+        }
+
+        function formatCurrency(amount) {
+            return 'S$' + amount.toLocaleString('en-SG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        document.getElementById('predict-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const errorEl = document.getElementById('error-msg');
+            btn.disabled = true;
+            btn.textContent = 'Predicting...';
+            errorEl.classList.remove('active');
+
+            const payload = {
+                district: parseInt(document.getElementById('district').value),
+                area_sqm: parseFloat(document.getElementById('area').value),
+                floor: parseInt(document.getElementById('floor').value),
+                lease_commence_year: parseInt(document.getElementById('lease_year').value),
+                market_segment: document.getElementById('market_segment').value,
+            };
+
+            try {
+                let data;
+                if (currentTab === 'milestone') {
+                    const resp = await fetch(`${API_BASE}/predict/milestones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+                    data = await resp.json();
+
+                    document.getElementById('price-5yr').textContent = formatCurrency(data.mop_5yr_price);
+                    document.getElementById('price-10yr').textContent = formatCurrency(data.privatised_10yr_price);
+                    document.getElementById('appreciation').textContent = formatCurrency(data.price_appreciation);
+
+                    const pctEl = document.getElementById('appreciation-pct');
+                    pctEl.textContent = (data.appreciation_pct > 0 ? '+' : '') + data.appreciation_pct + '%';
+                    pctEl.className = 'result-value ' + (data.appreciation_pct >= 0 ? 'positive' : 'negative');
+
+                    document.getElementById('milestone-results').style.display = 'block';
+                    document.getElementById('custom-results').style.display = 'none';
+                } else {
+                    payload.years_from_launch = parseInt(document.getElementById('years_from_launch').value);
+                    payload.sale_type = 'Resale';
+                    const resp = await fetch(`${API_BASE}/predict`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+                    data = await resp.json();
+
+                    document.getElementById('custom-price').textContent = formatCurrency(data.predicted_price);
+                    document.getElementById('milestone-results').style.display = 'none';
+                    document.getElementById('custom-results').style.display = 'block';
+                }
+
+                document.getElementById('results').classList.add('active');
+            } catch (err) {
+                errorEl.textContent = 'Prediction failed: ' + err.message;
+                errorEl.classList.add('active');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Predict Prices';
+            }
+        });
+    </script>
+</body>
+</html>

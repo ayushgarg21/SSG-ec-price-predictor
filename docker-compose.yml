@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ec_price_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ec_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ec_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ec_prices}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ec_user} -d ${POSTGRES_DB:-ec_prices}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ec_price_api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ec_user}:${POSTGRES_PASSWORD:-ec_password}@postgres:5432/${POSTGRES_DB:-ec_prices}
+      MODEL_PATH: /app/artifacts/model.joblib
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./artifacts:/app/artifacts
+
+volumes:
+  pg_data:
