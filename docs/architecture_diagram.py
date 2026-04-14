@@ -1,159 +1,190 @@
-"""Generate system architecture diagram."""
+"""Generate clean system architecture diagram."""
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-fig, ax = plt.subplots(figsize=(22, 14))
-ax.set_xlim(0, 22)
-ax.set_ylim(0, 14)
+fig, ax = plt.subplots(figsize=(24, 16))
+ax.set_xlim(0, 24)
+ax.set_ylim(0, 16)
 ax.axis("off")
-fig.patch.set_facecolor("white")
+fig.patch.set_facecolor("#fafafa")
 
 # Title
-ax.text(11, 13.5, "EC Price Predictor — System Architecture",
-        ha="center", fontsize=22, fontweight="bold", color="#0f172a")
-ax.text(11, 13.05, "Docker Compose  |  PostgreSQL 16  |  FastAPI  |  Streamlit",
+ax.text(12, 15.5, "EC Price Predictor — System Architecture",
+        ha="center", fontsize=24, fontweight="bold", color="#0f172a")
+ax.text(12, 15.0, "Docker Compose  |  PostgreSQL 16  |  FastAPI  |  Streamlit  |  XGBoost / LightGBM / CatBoost",
         ha="center", fontsize=12, color="#64748b")
 
-def draw_box(ax, x, y, w, h, title, items, color="#1e40af", icon=""):
-    """Draw a rounded component box."""
-    box = patches.FancyBboxPatch(
-        (x, y), w, h, boxstyle="round,pad=0.15",
-        facecolor="white", edgecolor=color, linewidth=2.5, zorder=2
-    )
-    ax.add_patch(box)
-    # Header bar
-    ax.add_patch(patches.FancyBboxPatch(
-        (x, y + h - 0.6), w, 0.6, boxstyle="round,pad=0.15",
-        facecolor=color, edgecolor=color, linewidth=2, zorder=3
-    ))
-    ax.add_patch(patches.Rectangle((x, y + h - 0.6), w, 0.2, facecolor=color, edgecolor="none", zorder=3))
 
-    ax.text(x + w/2, y + h - 0.3, f"{icon}  {title}" if icon else title,
-            ha="center", va="center", fontsize=12, fontweight="bold", color="white", zorder=4)
+def draw_component(ax, x, y, w, h, title, items, color="#1e40af", title_size=13):
+    """Draw a component box. x,y = bottom-left."""
+    # Shadow
+    ax.add_patch(patches.FancyBboxPatch(
+        (x + 0.08, y - 0.08), w, h,
+        boxstyle="round,pad=0.15", facecolor="#cbd5e1", edgecolor="none", zorder=0
+    ))
+    # Body
+    ax.add_patch(patches.FancyBboxPatch(
+        (x, y), w, h,
+        boxstyle="round,pad=0.15", facecolor="white", edgecolor=color, linewidth=2.5, zorder=1
+    ))
+    # Header
+    hdr_h = 0.55
+    ax.add_patch(patches.FancyBboxPatch(
+        (x + 0.03, y + h - hdr_h), w - 0.06, hdr_h,
+        boxstyle="round,pad=0.1", facecolor=color, edgecolor="none", zorder=2
+    ))
+    ax.add_patch(patches.Rectangle(
+        (x + 0.03, y + h - hdr_h), w - 0.06, 0.15,
+        facecolor=color, edgecolor="none", zorder=2
+    ))
+    ax.text(x + w / 2, y + h - hdr_h / 2, title,
+            ha="center", va="center", fontsize=title_size, fontweight="bold", color="white", zorder=3)
 
     for i, item in enumerate(items):
-        ax.text(x + 0.3, y + h - 1.0 - i * 0.35, f"• {item}",
-                fontsize=9.5, color="#334155", va="center", zorder=3)
+        iy = y + h - hdr_h - 0.35 - i * 0.38
+        ax.text(x + 0.35, iy, f"•  {item}", fontsize=10, color="#334155", va="center", zorder=3)
 
-def draw_arrow(ax, x1, y1, x2, y2, label="", color="#334155", style="-|>"):
+    return x, y, x + w, y + h
+
+
+def draw_arrow(ax, x1, y1, x2, y2, label="", color="#475569", dashed=False):
+    style = "--" if dashed else "-"
     ax.annotate(
         "", xy=(x2, y2), xytext=(x1, y1),
-        arrowprops=dict(arrowstyle=style, color=color, lw=2.5, connectionstyle="arc3,rad=0")
+        arrowprops=dict(arrowstyle="-|>", color=color, lw=2.5, linestyle=style, shrinkA=3, shrinkB=3)
     )
     if label:
         mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-        ax.text(mx, my + 0.25, label, ha="center", fontsize=9, color=color, fontweight="bold",
-                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="none", alpha=0.9))
+        offset = 0.3 if x1 != x2 else 0.0
+        ax.text(mx, my + offset, label, ha="center", va="center", fontsize=10, color=color, fontweight="bold",
+                bbox=dict(facecolor="white", edgecolor=color, boxstyle="round,pad=0.25", linewidth=1.2, alpha=0.95),
+                zorder=5)
 
-# ── Layer labels ──
-for ly, label, color in [(12.2, "DATA INGESTION", "#059669"), (8.0, "ML PIPELINE", "#7c3aed"), (3.8, "SERVING LAYER", "#2563eb")]:
+
+def draw_layer_label(ax, y, label, color):
     ax.add_patch(patches.FancyBboxPatch(
-        (0.3, ly), 2.5, 0.5, boxstyle="round,pad=0.1",
-        facecolor=color, edgecolor="none", alpha=0.15, zorder=0
+        (0.3, y - 0.25), 3.0, 0.5,
+        boxstyle="round,pad=0.1", facecolor=color, edgecolor="none", alpha=0.12, zorder=0
     ))
-    ax.text(1.55, ly + 0.25, label, ha="center", va="center",
-            fontsize=9, fontweight="bold", color=color, zorder=1)
+    ax.text(1.8, y, label, ha="center", va="center",
+            fontsize=10, fontweight="bold", color=color, zorder=1)
+
 
 # ═══════════════════════════════════════════
-# DATA INGESTION LAYER
+# LAYER 1: DATA INGESTION (y: 11-14)
 # ═══════════════════════════════════════════
+draw_layer_label(ax, 12.8, "DATA INGESTION", "#059669")
 
-draw_box(ax, 3.2, 10.8, 4.0, 2.0, "URA API", [
+draw_component(ax, 3.8, 11.2, 5.0, 2.5, "URA API", [
     "Private residential transactions",
-    "4 batches (by postal district)",
-    "Authentication: AccessKey + Token",
+    "4 batches by postal district",
+    "Auth: AccessKey + daily Token",
+    "Updated every Tue & Fri",
 ], color="#059669")
 
-draw_box(ax, 8.5, 10.8, 4.0, 2.0, "Ingestion Pipeline", [
-    "curl-based client (bypasses WAF)",
-    "Retry + circuit breaker",
+draw_component(ax, 10.0, 11.2, 5.0, 2.5, "Ingestion Pipeline", [
+    "curl-based (bypasses WAF)",
+    "Exponential backoff retry",
+    "Circuit breaker (5 failures)",
     "Flatten nested JSON → rows",
 ], color="#059669")
 
-draw_box(ax, 14.5, 10.8, 5.5, 2.0, "PostgreSQL (Docker)", [
-    "139,268 transactions",
-    "4 tables: transactions, features,",
-    "  model_registry, prediction_logs",
+draw_component(ax, 16.5, 11.2, 5.5, 2.5, "PostgreSQL 16", [
+    "139,268 transactions loaded",
+    "4 tables (see Data Model)",
+    "UUID PKs, JSONB metadata",
+    "Docker volume persistence",
 ], color="#059669")
 
-draw_arrow(ax, 7.2, 11.8, 8.5, 11.8, "curl + retry", "#059669")
-draw_arrow(ax, 12.5, 11.8, 14.5, 11.8, "bulk INSERT", "#059669")
+draw_arrow(ax, 8.8, 12.45, 10.0, 12.45, "curl + retry", "#059669")
+draw_arrow(ax, 15.0, 12.45, 16.5, 12.45, "bulk INSERT", "#059669")
 
 # ═══════════════════════════════════════════
-# ML PIPELINE LAYER
+# LAYER 2: ML PIPELINE (y: 6.5-10)
 # ═══════════════════════════════════════════
+draw_layer_label(ax, 8.8, "ML PIPELINE", "#7c3aed")
 
-draw_box(ax, 3.2, 6.5, 4.5, 2.5, "Feature Engineering", [
+draw_component(ax, 3.8, 6.8, 5.0, 2.8, "Feature Engineering", [
     "24 leakage-free features",
     "Lag-1 year district/project stats",
-    "Appreciation ratio target",
-    "Target encoding (train-only)",
+    "Appreciation ratio = PSM / launch",
+    "Target encoding (train-only KFold)",
+    "Temporal split FIRST, then features",
 ], color="#7c3aed")
 
-draw_box(ax, 9.0, 6.5, 4.5, 2.5, "Model Training", [
-    "Optuna HPO (60 trials × 3 algos)",
+draw_component(ax, 10.0, 6.8, 5.0, 2.8, "Model Training", [
+    "Optuna HPO (60 trials x 3 algos)",
     "XGBoost / LightGBM / CatBoost",
-    "Weighted ensemble",
-    "Temporal train/val/test split",
+    "Weighted ensemble optimization",
+    "Temporal train → val → test",
+    "Quantile regression for intervals",
 ], color="#7c3aed")
 
-draw_box(ax, 15.0, 6.5, 5.0, 2.5, "Evaluation & Artifacts", [
-    "R²=0.88, MAPE=5.4%",
-    "SHAP explanations",
-    "Prediction intervals (quantile reg)",
+draw_component(ax, 16.5, 6.8, 5.5, 2.8, "Evaluation", [
+    "R² = 0.88  |  MAPE = 5.4%",
+    "SHAP TreeExplainer",
+    "Segmented eval (district, age)",
+    "Residual analysis",
     "Experiment tracking (JSONL)",
 ], color="#7c3aed")
 
-draw_arrow(ax, 7.7, 7.75, 9.0, 7.75, "features", "#7c3aed")
-draw_arrow(ax, 13.5, 7.75, 15.0, 7.75, "metrics", "#7c3aed")
-draw_arrow(ax, 17.2, 10.8, 17.2, 9.0, "SQL query", "#64748b")
+draw_arrow(ax, 8.8, 8.2, 10.0, 8.2, "features", "#7c3aed")
+draw_arrow(ax, 15.0, 8.2, 16.5, 8.2, "metrics", "#7c3aed")
+
+# Postgres → Feature Engineering (vertical)
+draw_arrow(ax, 6.3, 11.2, 6.3, 9.6, "SQL query", "#64748b", dashed=True)
 
 # ═══════════════════════════════════════════
-# SERVING LAYER
+# LAYER 3: SERVING (y: 1.5-5.5)
 # ═══════════════════════════════════════════
+draw_layer_label(ax, 4.5, "SERVING LAYER", "#2563eb")
 
-draw_box(ax, 3.2, 1.8, 5.0, 2.8, "FastAPI (Docker)", [
-    "POST /predict — single prediction",
-    "POST /predict/milestones — 5yr vs 10yr",
-    "GET /health — model status",
-    "SHAP + prediction intervals",
-    "Rate limiting + TTL cache",
+draw_component(ax, 3.8, 2.2, 5.0, 3.0, "FastAPI", [
+    "POST /predict",
+    "POST /predict/milestones",
+    "GET /health",
+    "SHAP explanations per request",
+    "Prediction intervals (80% PI)",
+    "Rate limit (60/min) + TTL cache",
 ], color="#2563eb")
 
-draw_box(ax, 9.5, 1.8, 4.5, 2.8, "Serving Infrastructure", [
-    "Model bundle (joblib)",
-    "Serving lookups (district/project)",
-    "Prediction logging → Postgres",
+draw_component(ax, 10.0, 2.2, 5.0, 3.0, "Model Serving", [
+    "model.joblib (LightGBM)",
+    "serving_lookups.joblib",
+    "Prediction → Postgres logging",
     "Non-root Docker container",
     "2 uvicorn workers",
+    "Healthcheck every 30s",
 ], color="#2563eb")
 
-draw_box(ax, 15.5, 1.8, 5.0, 2.8, "Streamlit Frontend", [
-    "Milestone comparison tab",
-    "Custom prediction tab",
-    "Prediction intervals display",
+draw_component(ax, 16.5, 2.2, 5.5, 3.0, "Streamlit Frontend", [
+    "Milestone comparison (5yr vs 10yr)",
+    "Custom prediction mode",
+    "Prediction interval display",
     "SHAP feature contributions",
-    "Project selector dropdown",
+    "EC project selector",
+    "Real-time API status",
 ], color="#e65100")
 
-draw_arrow(ax, 8.2, 3.2, 9.5, 3.2, "load model", "#2563eb")
-draw_arrow(ax, 14.0, 3.2, 15.5, 3.2, "HTTP API", "#e65100")
+draw_arrow(ax, 8.8, 3.7, 10.0, 3.7, "load model", "#2563eb")
+draw_arrow(ax, 15.0, 3.7, 16.5, 3.7, "HTTP JSON", "#e65100")
 
-# Vertical flow: artifacts → serving
-draw_arrow(ax, 5.7, 6.5, 5.7, 4.6, "model.joblib", "#64748b")
+# Model artifacts → Serving (vertical)
+draw_arrow(ax, 12.5, 6.8, 12.5, 5.2, "model.joblib", "#64748b", dashed=True)
 
-# ── Deployment info ──
+# ── DEPLOYMENT BAR ──
 ax.add_patch(patches.FancyBboxPatch(
-    (3.2, 0.3), 17.3, 0.9, boxstyle="round,pad=0.15",
-    facecolor="#f0fdf4", edgecolor="#059669", linewidth=1.5, zorder=2
+    (3.8, 0.4), 18.2, 1.0,
+    boxstyle="round,pad=0.15", facecolor="#f0fdf4", edgecolor="#059669", linewidth=2, zorder=2
 ))
-ax.text(11.85, 0.75, "Deployed at:   API → http://172.234.215.236:8000/docs   |   Frontend → http://172.234.215.236:8501   |   GitHub → github.com/ayushgarg21/SSG-ec-price-predictor",
-        ha="center", va="center", fontsize=10, color="#059669", fontweight="bold", zorder=3)
+ax.text(12.9, 0.9, "LIVE DEPLOYMENT",
+        ha="center", va="center", fontsize=12, fontweight="bold", color="#059669")
+ax.text(12.9, 0.55, "API: http://172.234.215.236:8000/docs    |    Frontend: http://172.234.215.236:8501    |    GitHub: github.com/ayushgarg21/SSG-ec-price-predictor",
+        ha="center", va="center", fontsize=10, color="#059669")
 
-plt.tight_layout(pad=0.3)
-plt.savefig("docs/architecture_diagram.pdf", dpi=200, bbox_inches="tight", facecolor="white")
-plt.savefig("docs/architecture_diagram.png", dpi=200, bbox_inches="tight", facecolor="white")
+plt.savefig("docs/architecture_diagram.pdf", dpi=200, bbox_inches="tight", facecolor="#fafafa")
+plt.savefig("docs/architecture_diagram.png", dpi=200, bbox_inches="tight", facecolor="#fafafa")
 print("Saved: docs/architecture_diagram.pdf, docs/architecture_diagram.png")
