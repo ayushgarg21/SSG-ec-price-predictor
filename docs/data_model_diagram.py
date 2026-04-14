@@ -164,21 +164,30 @@ ax.text(mid_x2 + 0.4, (gap2_top + gap2_bot) / 2, "1 : N",
         fontsize=13, color="#2563eb", fontweight="bold", va="center",
         bbox=dict(facecolor="white", edgecolor="#2563eb", boxstyle="round,pad=0.35", linewidth=1.5))
 
-# ── DATA FLOW (horizontal dashed) ──
+# ── DATA FLOW (horizontal dashed, routed through the gap between columns) ──
 
-flow_y1 = 13.5
+# Top flow: goes above both table pairs in the gap row
+flow_y1 = (y1b + y2t) / 2  # middle of the vertical gap between top and bottom tables
+mid_gap_x = (x1r + x3l) / 2
 ax.annotate("", xy=(x3l - 0.2, flow_y1), xytext=(x1r + 0.2, flow_y1),
             arrowprops=dict(arrowstyle="-|>", color="#059669", lw=3, linestyle="--", shrinkA=0, shrinkB=0))
-ax.text((x1r + x3l) / 2, flow_y1 + 0.4, "Feature Engineering + Training",
-        ha="center", fontsize=13, color="#059669", fontweight="bold",
-        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.35", linewidth=1.5))
+ax.text(mid_gap_x, flow_y1 + 0.45, "Feature Engineering",
+        ha="center", fontsize=12, color="#059669", fontweight="bold",
+        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.3", linewidth=1.5))
+ax.text(mid_gap_x, flow_y1 - 0.45, "+ Training",
+        ha="center", fontsize=12, color="#059669", fontweight="bold",
+        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.3", linewidth=1.5))
 
-flow_y2 = 5.5
+# Bottom flow: below ec_features and prediction_logs
+flow_y2 = min(y2b, y4b) - 0.6
 ax.annotate("", xy=(x4l - 0.2, flow_y2), xytext=(x2r + 0.2, flow_y2),
             arrowprops=dict(arrowstyle="-|>", color="#059669", lw=3, linestyle="--", shrinkA=0, shrinkB=0))
-ax.text((x2r + x4l) / 2, flow_y2 + 0.4, "Model Inference → Prediction Logging",
-        ha="center", fontsize=13, color="#059669", fontweight="bold",
-        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.35", linewidth=1.5))
+ax.text(mid_gap_x, flow_y2 + 0.45, "Model Inference",
+        ha="center", fontsize=12, color="#059669", fontweight="bold",
+        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.3", linewidth=1.5))
+ax.text(mid_gap_x, flow_y2 - 0.45, "→ Prediction Logging",
+        ha="center", fontsize=12, color="#059669", fontweight="bold",
+        bbox=dict(facecolor="#f0fdf4", edgecolor="#059669", boxstyle="round,pad=0.3", linewidth=1.5))
 
 # ── LEGEND ──
 ly = 0.8
